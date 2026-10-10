@@ -6,8 +6,3 @@ services:
       - stack.env
     environment:
       KOBO_TMP_DIR: /tmp/kobo-to-dropbox
-    volumes:
-      - kobo_tmp:/tmp/kobo-to-dropbox
-
-volumes:
-  kobo_tmp:

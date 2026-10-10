@@ -20,7 +20,8 @@ RUN uv sync --frozen --no-dev
 # Don't run as root
 RUN useradd -m kobo-to-dropbox \
     && mkdir -p /tmp/kobo-to-dropbox \
-    && chown -R kobo-to-dropbox:kobo-to-dropbox /app /tmp/kobo-to-dropbox
+    && chown -R kobo-to-dropbox:kobo-to-dropbox /app /tmp/kobo-to-dropbox \
+    && chmod 700 /tmp/kobo-to-dropbox
 USER kobo-to-dropbox
 
 CMD ["uv", "run", "--no-sync", "python", "kobo_to_dropbox.py"]
