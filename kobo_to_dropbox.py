@@ -482,6 +482,7 @@ def backup_project(dbx, asset, root, report):
 
     with tempfile.TemporaryDirectory(prefix=f"kobo_{uid}_") as td:
         tmp = Path(td)
+        log.info("path : %s", str(tmp))
         budget = StorageBudget()
 
         step("definitions", lambda: save_definitions(uid, tmp, report, budget))
