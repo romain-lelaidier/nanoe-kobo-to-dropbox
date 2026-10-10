@@ -18,7 +18,6 @@ Design choices:
 
 Env vars (.env):
   KOBO_TOKEN, KOBO_SERVER (default https://eu.kobotoolbox.org)
-    KOBO_TMP_DIR (default /tmp/kobo-to-dropbox)
   Dropbox, either:
     DROPBOX_REFRESH_TOKEN + DROPBOX_APP_KEY + DROPBOX_APP_SECRET   (recommended, no expiry)
     or DROPBOX_TOKEN                                               (short-lived tokens expire!)
@@ -52,7 +51,7 @@ KOBO_SERVER = os.getenv("KOBO_SERVER", "https://eu.kobotoolbox.org").rstrip("/")
 DROPBOX_ROOT = os.getenv("DROPBOX_ROOT")
 IGNORE_UNTIL = os.getenv("IGNORE_UNTIL")
 assert(DROPBOX_ROOT is not None)
-TMP_ROOT = Path(os.getenv("KOBO_TMP_DIR", "/tmp/kobo-to-dropbox")).expanduser()
+TMP_ROOT = Path(__file__).resolve().parent / "tmp"
 
 INCLUDE_MEDIA = True
 INCLUDE_XLSX_EXPORT = True
