@@ -18,6 +18,7 @@ Design choices:
 
 Env vars (.env):
   KOBO_TOKEN, KOBO_SERVER (default https://eu.kobotoolbox.org)
+    KOBO_TMP_DIR (default ~/.cache/kobo-to-dropbox)
   Dropbox, either:
     DROPBOX_REFRESH_TOKEN + DROPBOX_APP_KEY + DROPBOX_APP_SECRET   (recommended, no expiry)
     or DROPBOX_TOKEN                                               (short-lived tokens expire!)
@@ -51,6 +52,7 @@ KOBO_SERVER = os.getenv("KOBO_SERVER", "https://eu.kobotoolbox.org").rstrip("/")
 DROPBOX_ROOT = os.getenv("DROPBOX_ROOT")
 IGNORE_UNTIL = os.getenv("IGNORE_UNTIL")
 assert(DROPBOX_ROOT is not None)
+TMP_ROOT = Path(os.getenv("KOBO_TMP_DIR", "~/.cache/kobo-to-dropbox")).expanduser()
 
 INCLUDE_MEDIA = True
 INCLUDE_XLSX_EXPORT = True
@@ -97,6 +99,11 @@ def paginate(url, params=None):
 def slugify(name):
     s = re.sub(r"[^\w\-. ()]", "", name, flags=re.UNICODE).strip().replace(" ", "_")
     return s[:80] or "unnamed"
+
+
+def temporary_directory(prefix=None):
+    TMP_ROOT.mkdir(parents=True, exist_ok=True)
+    return tempfile.TemporaryDirectory(prefix=prefix, dir=TMP_ROOT)
 
 
 def list_projects():
@@ -480,7 +487,7 @@ def backup_project(dbx, asset, root, report):
             log.error("  ! %s failed: %s", label, e)
             report["errors"].append(f"{label}: {e}")
 
-    with tempfile.TemporaryDirectory(prefix=f"kobo_{uid}_") as td:
+    with temporary_directory(prefix=f"kobo_{uid}_") as td:
         tmp = Path(td)
         log.info("path : %s", str(tmp))
         budget = StorageBudget()
@@ -545,7 +552,7 @@ def main():
     run["finished"] = datetime.now(timezone.utc).isoformat()
     failed = [p for p in run["projects"] if p.get("errors")]
     run["projects_with_errors"] = len(failed)
-    with tempfile.TemporaryDirectory() as td:
+    with temporary_directory(prefix="kobo_summary_") as td:
         summary = Path(td) / "run_summary.json"
         summary.write_text(json.dumps(run, indent=2, ensure_ascii=False), "utf-8")
         upload(dbx, summary, f"{DROPBOX_ROOT}/run_summary_{datetime.now(timezone.utc).isoformat()}.json")
