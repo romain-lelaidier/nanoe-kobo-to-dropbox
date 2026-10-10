@@ -17,7 +17,4 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY . .
 RUN uv sync --frozen --no-dev
 
-# Don't run as root
-USER romain
-
 CMD ["uv", "run", "--no-sync", "python", "kobo_to_dropbox.py"]
