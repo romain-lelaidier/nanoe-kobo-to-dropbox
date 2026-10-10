@@ -4,3 +4,10 @@ services:
     container_name: kobo-to-dropbox
     env_file:
       - stack.env
+    environment:
+      KOBO_TMP_DIR: /tmp/kobo-to-dropbox
+    volumes:
+      - kobo_tmp:/tmp/kobo-to-dropbox
+
+volumes:
+  kobo_tmp:
