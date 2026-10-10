@@ -48,10 +48,12 @@ load_dotenv()
 
 KOBO_TOKEN = os.getenv("KOBO_TOKEN")
 KOBO_SERVER = os.getenv("KOBO_SERVER", "https://eu.kobotoolbox.org").rstrip("/")
-DROPBOX_ROOT = os.getenv("DROPBOX_ROOT", "/Support IT/Sauvegardes Kobo")
+DROPBOX_ROOT = os.getenv("DROPBOX_ROOT")
+IGNORE_UNTIL = os.getenv("IGNORE_UNTIL")
+assert(DROPBOX_ROOT is not None)
+
 INCLUDE_MEDIA = True
 INCLUDE_XLSX_EXPORT = True
-IGNORE_UNTIL = os.getenv("IGNORE_UNTIL")
 MAX_STORAGE_BYTES = 1 * 1024**3   # maximum staged files per project
 MANIFEST_RESERVE_BYTES = 4 * 1024**2
 MAX_ZIP_BYTES = 1 * 1024**3       # start a new attachments zip part after ~1 GB
@@ -519,7 +521,6 @@ def main():
     dbx = make_dropbox()
     dbx.users_get_current_account()  # fail fast on bad Dropbox credentials
 
-    root = f"{DROPBOX_ROOT}/{datetime.now(timezone.utc):%Y-%m-%d}"
     projects = list(list_projects())  # fail fast on bad Kobo credentials
     log.info("%d projects found", len(projects))
 
@@ -534,7 +535,7 @@ def main():
         log.info("(%i/%i) Processing: %s (%s)", i+1, len(projects), asset.get("name"), asset["uid"])
         report = {}
         try:
-            backup_project(dbx, asset, root, report)
+            backup_project(dbx, asset, DROPBOX_ROOT, report)
         except Exception as e:  # never let one project kill the run
             log.exception("project crashed")
             report.setdefault("errors", []).append(f"crash: {e}")
@@ -546,9 +547,9 @@ def main():
     with tempfile.TemporaryDirectory() as td:
         summary = Path(td) / "run_summary.json"
         summary.write_text(json.dumps(run, indent=2, ensure_ascii=False), "utf-8")
-        upload(dbx, summary, f"{root}/run_summary.json")
+        upload(dbx, summary, f"{DROPBOX_ROOT}/run_summary.json")
 
-    log.info("Done. %d/%d projects with errors. Output: %s", len(failed), len(projects), root)
+    log.info("Done. %d/%d projects with errors. Output: %s", len(failed), len(projects), DROPBOX_ROOT)
     for p in failed:
         log.error("  %s: %s", p.get("name"), "; ".join(p["errors"]))
     sys.exit(1 if failed else 0)
