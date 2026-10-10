@@ -1,7 +1,7 @@
 services:
-  airtable-temp-sync:
+  kobo-to-dropbox:
     build: .
-    container_name: airtable-temp-sync
+    container_name: kobo-to-dropbox
     restart: unless-stopped
     env_file:
       - stack.env
