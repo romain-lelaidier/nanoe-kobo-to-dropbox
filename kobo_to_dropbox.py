@@ -318,16 +318,32 @@ def export_xlsx(asset_uid, dest: Path, budget, max_wait=1800):
         "type": "xls", "lang": "_default", "hierarchy_in_labels": False,
         "group_sep": "/", "multiple_select": "both", "fields_from_all_versions": True,
     }
+    log.info("  requesting Kobo XLSX export")
     r = session.post(f"{KOBO_SERVER}/api/v2/assets/{asset_uid}/exports/", json=body, timeout=TIMEOUT)
     r.raise_for_status()
     url = r.json()["url"]
+    started = time.monotonic()
     deadline, delay = time.time() + max_wait, 3
+    next_wait_log, last_status = started + 60, None
     while time.time() < deadline:
-        j = kget(url).json()
-        if j.get("status") == "complete":
-            return stream_download(j["result"], dest, budget)
-        if j.get("status") == "error":
+        response = kget(url)
+        response.raise_for_status()
+        j = response.json()
+        status = j.get("status", "unknown")
+        if status != last_status:
+            log.info("  Kobo XLSX export status: %s", status)
+            last_status = status
+        if status == "complete":
+            log.info("  Kobo XLSX export is ready; downloading")
+            result = stream_download(j["result"], dest, budget)
+            log.info("  Kobo XLSX export downloaded (%d bytes)", result[0])
+            return result
+        if status == "error":
             raise RuntimeError(f"export failed: {j.get('messages')}")
+        if time.monotonic() >= next_wait_log:
+            elapsed = int(time.monotonic() - started)
+            log.info("  still waiting for Kobo XLSX export (%d seconds elapsed)", elapsed)
+            next_wait_log = time.monotonic() + 60
         time.sleep(delay)
         delay = min(delay * 1.5, 30)
     raise TimeoutError("XLSX export did not finish in time")
@@ -507,6 +523,8 @@ def backup_project(dbx, asset, root, report):
             step("xlsx export", lambda: export_xlsx(uid, tmp / "submissions.xlsx", budget))
 
         if INCLUDE_MEDIA and subs:
+            attachment_count = sum(len(s.get("_attachments", [])) for s in subs)
+            log.info("  starting media backup (%d listed attachments)", attachment_count)
             step("media", lambda: backup_media(subs, tmp, report, budget, dbx, remote_dir))
             if report.get("attachments_failed"):
                 report["errors"].append(f"{len(report['attachments_failed'])} attachments failed")
