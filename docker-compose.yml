@@ -2,6 +2,5 @@ services:
   kobo-to-dropbox:
     build: .
     container_name: kobo-to-dropbox
-    restart: unless-stopped
     env_file:
       - stack.env
