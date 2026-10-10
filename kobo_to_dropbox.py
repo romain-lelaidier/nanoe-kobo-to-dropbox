@@ -547,7 +547,7 @@ def main():
     with tempfile.TemporaryDirectory() as td:
         summary = Path(td) / "run_summary.json"
         summary.write_text(json.dumps(run, indent=2, ensure_ascii=False), "utf-8")
-        upload(dbx, summary, f"{DROPBOX_ROOT}/run_summary.json")
+        upload(dbx, summary, f"{DROPBOX_ROOT}/run_summary_{datetime.now(timezone.utc).isoformat()}.json")
 
     log.info("Done. %d/%d projects with errors. Output: %s", len(failed), len(projects), DROPBOX_ROOT)
     for p in failed:
